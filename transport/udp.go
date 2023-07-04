@@ -3,6 +3,7 @@ package transport
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"strings"
 
 	"github.com/ghettovoice/gosip/log"
@@ -79,6 +80,10 @@ func (p *udpProtocol) Listen(target *Target, options ...ListenOption) error {
 	}
 
 	return err // should be nil here
+}
+
+func (p *udpProtocol) Connect(url string, header http.Header) error {
+	return nil
 }
 
 func (p *udpProtocol) Send(target *Target, msg sip.Message) error {

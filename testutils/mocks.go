@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"sync"
 
 	"github.com/ghettovoice/gosip/log"
@@ -131,6 +132,10 @@ func (tpl *MockTransportLayer) Errors() <-chan error {
 }
 
 func (tpl *MockTransportLayer) Listen(network string, addr string, options ...transport.ListenOption) error {
+	return nil
+}
+
+func (tpl *MockTransportLayer) Connect(url string, header http.Header) error {
 	return nil
 }
 

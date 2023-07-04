@@ -2,6 +2,7 @@ package transport
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ type Protocol interface {
 	Reliable() bool
 	Streamed() bool
 	Listen(target *Target, options ...ListenOption) error
+	Connect(url string, header http.Header) error
 	Send(target *Target, msg sip.Message) error
 	String() string
 }

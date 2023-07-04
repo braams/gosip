@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"sync"
 
 	"github.com/ghettovoice/gosip/log"
@@ -24,7 +25,7 @@ type RequestHandler func(req sip.Request, tx sip.ServerTransaction)
 
 type Server interface {
 	Shutdown()
-
+	Connect(url string, header http.Header) error
 	Listen(network, addr string, options ...transport.ListenOption) error
 	Send(msg sip.Message) error
 
@@ -170,6 +171,10 @@ func (srv *server) Log() log.Logger {
 // ListenAndServe starts serving listeners on the provided address
 func (srv *server) Listen(network string, listenAddr string, options ...transport.ListenOption) error {
 	return srv.tp.Listen(network, listenAddr, options...)
+}
+
+func (srv *server) Connect(url string, header http.Header) error {
+	return srv.tp.Connect(url, header)
 }
 
 func (srv *server) serve() {

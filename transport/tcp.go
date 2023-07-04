@@ -3,6 +3,7 @@ package transport
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"strings"
 
 	"github.com/ghettovoice/gosip/log"
@@ -137,6 +138,10 @@ func (p *tcpProtocol) Listen(target *Target, options ...ListenOption) error {
 		}
 	}
 	return err // should be nil here
+}
+
+func (p *tcpProtocol) Connect(url string, header http.Header) error {
+	return nil
 }
 
 func (p *tcpProtocol) Send(target *Target, msg sip.Message) error {

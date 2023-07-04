@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"net/http"
+	neturl "net/url"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +28,7 @@ type Layer interface {
 	Errors() <-chan error
 	// Listen starts listening on `addr` for each registered protocol.
 	Listen(network string, addr string, options ...ListenOption) error
+	Connect(url string, header http.Header) error
 	// Send sends message on suitable protocol.
 	Send(msg sip.Message) error
 	String() string
@@ -203,6 +206,34 @@ func (tpl *layer) Listen(network string, addr string, options ...ListenOption) e
 	}
 
 	return err
+}
+
+func (tpl *layer) Connect(url string, header http.Header) error {
+	select {
+	case <-tpl.canceled:
+		return fmt.Errorf("transport layer is canceled")
+	default:
+	}
+
+	u, err := neturl.Parse(url)
+	if err != nil {
+		return fmt.Errorf("url %s Parse failed: %w", url, err)
+	}
+	if u.Scheme != "ws" && u.Scheme != "wss" {
+		return fmt.Errorf("unsupported url scheme: %s", u.Scheme)
+	}
+
+	proto, err := tpl.getProtocol(u.Scheme)
+	if err != nil {
+		return err
+	}
+
+	err = proto.Connect(url, header)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (tpl *layer) Send(msg sip.Message) error {

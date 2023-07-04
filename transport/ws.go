@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"strings"
 	"time"
 
@@ -157,7 +158,7 @@ func (p *wsProtocol) Done() <-chan struct{} {
 	return p.connections.Done()
 }
 
-//piping new connections to connection pool for serving
+// piping new connections to connection pool for serving
 func (p *wsProtocol) pipePools() {
 	defer close(p.conns)
 
@@ -218,6 +219,29 @@ func (p *wsProtocol) Listen(target *Target, options ...ListenOption) error {
 	}
 
 	return err //should be nil here
+}
+
+func (p *wsProtocol) Connect(url string, header http.Header) error {
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	p.dialer.Header = ws.HandshakeHeaderHTTP(header)
+	baseConn, _, _, err := p.dialer.Dial(ctx, url)
+	p.dialer.Header = nil
+	if err != nil {
+		return fmt.Errorf("dialer.Dial %s failed: %w", url, err)
+	}
+	baseConn = &wsConn{
+		Conn:   baseConn,
+		client: true,
+	}
+	key := ConnectionKey(p.network + ":" + baseConn.RemoteAddr().String())
+	conn := NewConnection(baseConn, key, p.network, p.Log())
+
+	if err := p.connections.Put(conn, sockTTL); err != nil {
+		return fmt.Errorf("put %s connection to the pool: %w", conn.Key(), err)
+	}
+	return nil
 }
 
 func (p *wsProtocol) Send(target *Target, msg sip.Message) error {
