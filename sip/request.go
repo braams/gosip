@@ -262,7 +262,7 @@ func NewAckRequest(ackID MessageID, inviteRequest Request, inviteResponse Respon
 	if contact, ok := inviteResponse.Contact(); ok {
 		// For ws and wss (like clients in browser), don't use Contact
 		if strings.Index(strings.ToLower(recipient.String()), "transport=ws") == -1 {
-			recipient = contact.Address
+			recipient = contact.Address.Clone()
 		}
 	}
 	ackRequest := NewRequest(
