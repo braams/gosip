@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gobwas/ws"
+
 	"github.com/ghettovoice/gosip/log"
 	"github.com/ghettovoice/gosip/sip"
 )
@@ -341,7 +343,7 @@ func (err UnsupportedProtocolError) Error() string {
 	return "transport.UnsupportedProtocolError: " + string(err)
 }
 
-//TLSConfig for TLS and WSS only
+// TLSConfig for TLS and WSS only
 type TLSConfig struct {
 	Domain string
 	Cert   string
@@ -354,4 +356,16 @@ func (c TLSConfig) ApplyListen(opts *ListenOptions) {
 	opts.TLSConfig.Cert = c.Cert
 	opts.TLSConfig.Key = c.Key
 	opts.TLSConfig.Pass = c.Pass
+}
+
+type UpgraderFactory func(conn net.Conn) ws.Upgrader
+
+type WSConfig struct {
+	Upgrader        *ws.Upgrader
+	UpgraderFactory UpgraderFactory
+}
+
+func (c WSConfig) ApplyListen(opts *ListenOptions) {
+	opts.WSConfig.Upgrader = c.Upgrader
+	opts.WSConfig.UpgraderFactory = c.UpgraderFactory
 }

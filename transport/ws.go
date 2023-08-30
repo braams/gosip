@@ -71,13 +71,18 @@ type wsListener struct {
 	network string
 	u       ws.Upgrader
 	log     log.Logger
+	uf      UpgraderFactory
 }
 
-func NewWsListener(listener net.Listener, network string, log log.Logger) *wsListener {
+func NewWsListener(listener net.Listener, network string, log log.Logger, u *ws.Upgrader, uf UpgraderFactory) *wsListener {
 	l := &wsListener{
 		Listener: listener,
 		network:  network,
 		log:      log,
+		uf:       uf,
+	}
+	if u != nil {
+		l.u = *u
 	}
 	l.u.Protocol = func(val []byte) bool {
 		return string(val) == wsSubProtocol
@@ -90,7 +95,14 @@ func (l *wsListener) Accept() (net.Conn, error) {
 	if err != nil {
 		return nil, fmt.Errorf("accept new connection: %w", err)
 	}
-	if _, err = l.u.Upgrade(conn); err == nil {
+	var u ws.Upgrader
+	if l.uf != nil {
+		u = l.uf(conn)
+	} else {
+		u = l.u
+	}
+
+	if _, err = u.Upgrade(conn); err == nil {
 		conn = &wsConn{
 			Conn:   conn,
 			client: false,
@@ -209,7 +221,18 @@ func (p *wsProtocol) Listen(target *Target, options ...ListenOption) error {
 	//index listeners by local address
 	// should live infinitely
 	key := ListenerKey(fmt.Sprintf("%s:0.0.0.0:%d", p.network, target.Port))
-	err = p.listeners.Put(key, NewWsListener(listener, p.network, p.Log()))
+	var upgrader *ws.Upgrader
+	var upgraderFactory UpgraderFactory
+	if len(options) > 0 {
+		opts := ListenOptions{}
+		for _, opt := range options {
+			opt.ApplyListen(&opts)
+		}
+		upgrader = opts.WSConfig.Upgrader
+		upgraderFactory = opts.WSConfig.UpgraderFactory
+	}
+	wsl := NewWsListener(listener, p.network, p.Log(), upgrader, upgraderFactory)
+	err = p.listeners.Put(key, wsl)
 	if err != nil {
 		err = &ProtocolError{
 			Err:      err,

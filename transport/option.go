@@ -87,4 +87,5 @@ type ListenOption interface {
 
 type ListenOptions struct {
 	TLSConfig TLSConfig
+	WSConfig  WSConfig
 }
