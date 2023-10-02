@@ -194,9 +194,9 @@ func TestNotExpiredReset(t *testing.T) {
 }
 
 // This is a regression test for a bug where:
-//  - Create 3 timers.
-//  - Reset() the first one.
-//  - The third timer is now no longer tracked and won't fire.
+//   - Create 3 timers.
+//   - Reset() the first one.
+//   - The third timer is now no longer tracked and won't fire.
 func TestThreeTimersWithReset(t *testing.T) {
 	MockMode = true
 	timer1 := NewTimer(1 * time.Second)
